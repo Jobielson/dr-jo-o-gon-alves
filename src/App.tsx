@@ -35,10 +35,80 @@ export default function App() {
   const [leadsTrigger, setLeadsTrigger] = useState(0);
   const [isFloatVisible, setIsFloatVisible] = useState(false);
 
+  const [logoUrl, setLogoUrl] = useState<string>(() => {
+    return localStorage.getItem('custom_logo') || '/logo.png';
+  });
+  const [photoUrl, setPhotoUrl] = useState<string>(() => {
+    return localStorage.getItem('custom_photo') || '/photo.png';
+  });
+  const [aboutPhotoUrl, setAboutPhotoUrl] = useState<string>(() => {
+    return localStorage.getItem('custom_about_photo') || '/about_photo.png';
+  });
+
   const [demoToast, setDemoToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
 
   const showDemoToast = (message: string) => {
     setDemoToast({ message, visible: true });
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setLogoUrl(base64String);
+        localStorage.setItem('custom_logo', base64String);
+        showDemoToast('Logo atualizada com sucesso!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPhotoUrl(base64String);
+        localStorage.setItem('custom_photo', base64String);
+        showDemoToast('Foto principal atualizada com sucesso!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAboutPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAboutPhotoUrl(base64String);
+        localStorage.setItem('custom_about_photo', base64String);
+        showDemoToast('Foto do escritório atualizada com sucesso!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleResetLogo = () => {
+    setLogoUrl('/logo.png');
+    localStorage.removeItem('custom_logo');
+    showDemoToast('Logo restaurada para o padrão.');
+  };
+
+  const handleResetPhoto = () => {
+    setPhotoUrl('/photo.png');
+    localStorage.removeItem('custom_photo');
+    showDemoToast('Foto principal restaurada para o padrão.');
+  };
+
+  const handleResetAboutPhoto = () => {
+    setAboutPhotoUrl('/about_photo.png');
+    localStorage.removeItem('custom_about_photo');
+    showDemoToast('Foto do escritório restaurada para o padrão.');
   };
 
   useEffect(() => {
@@ -121,7 +191,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#fdfbf7] text-[#2c1b10] font-sans antialiased overflow-x-hidden">
       {/* Header */}
-      <Header onContactClick={() => scrollToSection('diagnostico-form')} />
+      <Header onContactClick={() => scrollToSection('diagnostico-form')} logoUrl={logoUrl} />
 
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 md:py-24 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -199,8 +269,27 @@ export default function App() {
                   ease: "easeInOut",
                 }}
               >
-                <div className="w-full h-full bg-[#fdfbf7] p-2.5 rounded-full border-2 border-[#4c2f1a]/25 shadow-lg flex items-center justify-center overflow-hidden">
-                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain rounded-full" />
+                <div className="w-full h-full bg-[#fdfbf7] p-2.5 rounded-full border-2 border-[#4c2f1a]/25 shadow-lg flex items-center justify-center overflow-hidden relative group">
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain rounded-full" />
+                  {/* Upload overlay */}
+                  <div className="absolute inset-0 bg-[#4c2f1a]/85 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-1 p-1 rounded-full">
+                    <button 
+                      onClick={() => document.getElementById('logo-upload-input')?.click()}
+                      className="p-1.5 bg-[#d4af37] text-[#2c1b10] rounded-full hover:bg-[#c19a2e] transition-all transform hover:scale-110 shadow-md cursor-pointer"
+                      title="Alterar Logo"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                    </button>
+                    {logoUrl !== '/logo.png' && (
+                      <button 
+                        onClick={handleResetLogo}
+                        className="p-1 bg-red-800 text-white rounded-full hover:bg-red-700 transition-all transform hover:scale-110 shadow-md cursor-pointer"
+                        title="Restaurar Padrão"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -212,11 +301,34 @@ export default function App() {
             <div className="bg-[#fefbec] p-3 rounded-sm border border-[#4c2f1a]/15 editorial-shadow relative group">
               <div className="relative overflow-hidden rounded-sm h-[400px]">
                 <img
-                  src="/photo.png"
+                  src={photoUrl}
                   alt="Dr. João Gonçalves - Advogado"
                   className="w-full h-full object-cover rounded-sm transition-all duration-700 transform hover:scale-105"
                   referrerPolicy="no-referrer"
                 />
+                {/* Upload overlay */}
+                <div className="absolute inset-0 bg-[#2c1b10]/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3">
+                  <span className="text-white text-xs font-mono uppercase tracking-widest font-semibold flex items-center gap-1.5 bg-[#4c2f1a]/60 px-3 py-1.5 rounded-sm border border-[#d4af37]/30">
+                    <Camera className="w-4 h-4 text-[#d4af37]" /> Foto de Perfil
+                  </span>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => document.getElementById('photo-upload-input')?.click()}
+                      className="px-3 py-1.5 bg-[#d4af37] text-[#2c1b10] font-sans font-bold text-[10px] uppercase tracking-wider rounded-sm hover:bg-[#c19a2e] transition-all shadow-lg hover:scale-105 cursor-pointer"
+                    >
+                      Escolher Foto
+                    </button>
+                    {photoUrl !== '/photo.png' && (
+                      <button 
+                        onClick={handleResetPhoto}
+                        className="p-1.5 bg-red-800 text-white rounded-sm hover:bg-red-700 transition-all shadow-lg hover:scale-105 cursor-pointer"
+                        title="Restaurar Padrão"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="mt-4 p-3 text-center bg-[#4c2f1a]/5 rounded-sm">
@@ -305,14 +417,37 @@ export default function App() {
           <div className="lg:col-span-5 order-2 lg:order-1 relative">
             <div className="relative max-w-[340px] md:max-w-[380px] mx-auto">
               <div className="absolute inset-0 bg-[#4c2f1a]/5 border border-[#4c2f1a]/10 translate-x-2 -translate-y-2 sm:translate-x-4 sm:-translate-y-4 rounded-sm" />
-              <div className="bg-[#fdfbf7] p-3 border border-[#4c2f1a]/15 shadow-xl rounded-sm relative">
+              <div className="bg-[#fdfbf7] p-3 border border-[#4c2f1a]/15 shadow-xl rounded-sm relative group">
                 <div className="relative overflow-hidden rounded-sm h-[320px]">
                   <img
-                    src="/about_photo.png"
+                    src={aboutPhotoUrl}
                     alt="Escritório de Advocacia"
                     className="w-full h-full object-cover rounded-sm transition-all duration-700 transform hover:scale-105"
                     referrerPolicy="no-referrer"
                   />
+                  {/* Upload overlay */}
+                  <div className="absolute inset-0 bg-[#2c1b10]/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3">
+                    <span className="text-white text-xs font-mono uppercase tracking-widest font-semibold flex items-center gap-1.5 bg-[#4c2f1a]/60 px-3 py-1.5 rounded-sm border border-[#d4af37]/30">
+                      <Camera className="w-4 h-4 text-[#d4af37]" /> Foto do Escritório
+                    </span>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => document.getElementById('about-photo-upload-input')?.click()}
+                        className="px-3 py-1.5 bg-[#d4af37] text-[#2c1b10] font-sans font-bold text-[10px] uppercase tracking-wider rounded-sm hover:bg-[#c19a2e] transition-all shadow-lg hover:scale-105 cursor-pointer"
+                      >
+                        Escolher Foto
+                      </button>
+                      {aboutPhotoUrl !== '/about_photo.png' && (
+                        <button 
+                          onClick={handleResetAboutPhoto}
+                          className="p-1.5 bg-red-800 text-white rounded-sm hover:bg-red-700 transition-all shadow-lg hover:scale-105 cursor-pointer"
+                          title="Restaurar Padrão"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -680,6 +815,29 @@ export default function App() {
         isOpen={isAdminOpen} 
         onClose={() => setIsAdminOpen(false)} 
         leadsUpdatedTrigger={leadsTrigger}
+      />
+
+      {/* Hidden File Inputs for Edit Mode */}
+      <input
+        type="file"
+        id="logo-upload-input"
+        accept="image/*"
+        onChange={handleLogoUpload}
+        className="hidden"
+      />
+      <input
+        type="file"
+        id="photo-upload-input"
+        accept="image/*"
+        onChange={handlePhotoUpload}
+        className="hidden"
+      />
+      <input
+        type="file"
+        id="about-photo-upload-input"
+        accept="image/*"
+        onChange={handleAboutPhotoUpload}
+        className="hidden"
       />
 
       {/* Premium Demo Mode Toast Alert */}
