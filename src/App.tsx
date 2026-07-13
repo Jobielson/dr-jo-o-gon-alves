@@ -28,6 +28,55 @@ import LeadsManager from './components/LeadsManager';
 import { servicesData, testimonialsData } from './data';
 import { Lead } from './types';
 import { motion, AnimatePresence } from 'motion/react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from './lib/firebase';
+
+// Helper function to compress and downscale uploaded images
+const compressAndResizeImage = (file: File, maxDimension: number = 800, quality: number = 0.65): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Não foi possível obter o contexto 2D do canvas'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        reject(new Error('Erro ao carregar a imagem para compressão'));
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      reject(new Error('Erro ao ler o arquivo'));
+    };
+    reader.readAsDataURL(file);
+  });
+};
 
 export default function App() {
   const [selectedService, setSelectedService] = useState<string>('');
@@ -51,65 +100,134 @@ export default function App() {
     setDemoToast({ message, visible: true });
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setLogoUrl(base64String);
-        localStorage.setItem('custom_logo', base64String);
+      try {
+        const compressedBase64 = await compressAndResizeImage(file, 400, 0.7); // Logo can be even smaller (400px is perfect)
+        setLogoUrl(compressedBase64);
+        localStorage.setItem('custom_logo', compressedBase64);
         showDemoToast('Logo atualizada com sucesso!');
-      };
-      reader.readAsDataURL(file);
+        // Sync to Firestore for global access
+        const docRef = doc(db, 'settings', 'site_assets');
+        await setDoc(docRef, { logoUrl: compressedBase64 }, { merge: true });
+      } catch (error) {
+        console.error(error);
+        showDemoToast('Erro ao processar imagem da logo.');
+      }
     }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setPhotoUrl(base64String);
-        localStorage.setItem('custom_photo', base64String);
+      try {
+        const compressedBase64 = await compressAndResizeImage(file, 800, 0.65); // 800px is great for profile photo
+        setPhotoUrl(compressedBase64);
+        localStorage.setItem('custom_photo', compressedBase64);
         showDemoToast('Foto principal atualizada com sucesso!');
-      };
-      reader.readAsDataURL(file);
+        // Sync to Firestore for global access
+        const docRef = doc(db, 'settings', 'site_assets');
+        await setDoc(docRef, { photoUrl: compressedBase64 }, { merge: true });
+      } catch (error) {
+        console.error(error);
+        showDemoToast('Erro ao processar foto principal.');
+      }
     }
   };
 
-  const handleAboutPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAboutPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setAboutPhotoUrl(base64String);
-        localStorage.setItem('custom_about_photo', base64String);
+      try {
+        const compressedBase64 = await compressAndResizeImage(file, 800, 0.65); // 800px is great for about/office photo
+        setAboutPhotoUrl(compressedBase64);
+        localStorage.setItem('custom_about_photo', compressedBase64);
         showDemoToast('Foto do escritório atualizada com sucesso!');
-      };
-      reader.readAsDataURL(file);
+        // Sync to Firestore for global access
+        const docRef = doc(db, 'settings', 'site_assets');
+        await setDoc(docRef, { aboutPhotoUrl: compressedBase64 }, { merge: true });
+      } catch (error) {
+        console.error(error);
+        showDemoToast('Erro ao processar foto do escritório.');
+      }
     }
   };
 
-  const handleResetLogo = () => {
+  const handleResetLogo = async () => {
     setLogoUrl('/logo.png');
     localStorage.removeItem('custom_logo');
     showDemoToast('Logo restaurada para o padrão.');
+    try {
+      const docRef = doc(db, 'settings', 'site_assets');
+      await setDoc(docRef, { logoUrl: '/logo.png' }, { merge: true });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleResetPhoto = () => {
+  const handleResetPhoto = async () => {
     setPhotoUrl('/photo.png');
     localStorage.removeItem('custom_photo');
     showDemoToast('Foto principal restaurada para o padrão.');
+    try {
+      const docRef = doc(db, 'settings', 'site_assets');
+      await setDoc(docRef, { photoUrl: '/photo.png' }, { merge: true });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleResetAboutPhoto = () => {
+  const handleResetAboutPhoto = async () => {
     setAboutPhotoUrl('/about_photo.png');
     localStorage.removeItem('custom_about_photo');
     showDemoToast('Foto do escritório restaurada para o padrão.');
+    try {
+      const docRef = doc(db, 'settings', 'site_assets');
+      await setDoc(docRef, { aboutPhotoUrl: '/about_photo.png' }, { merge: true });
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  useEffect(() => {
+    const loadAssetsFromFirestore = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'site_assets');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.logoUrl) {
+            setLogoUrl(data.logoUrl);
+            localStorage.setItem('custom_logo', data.logoUrl);
+          }
+          if (data.photoUrl) {
+            setPhotoUrl(data.photoUrl);
+            localStorage.setItem('custom_photo', data.photoUrl);
+          }
+          if (data.aboutPhotoUrl) {
+            setAboutPhotoUrl(data.aboutPhotoUrl);
+            localStorage.setItem('custom_about_photo', data.aboutPhotoUrl);
+          }
+        } else {
+          // Sync local edits up to Firestore if it's empty so other people can see them immediately!
+          const localLogo = localStorage.getItem('custom_logo');
+          const localPhoto = localStorage.getItem('custom_photo');
+          const localAboutPhoto = localStorage.getItem('custom_about_photo');
+          if (localLogo || localPhoto || localAboutPhoto) {
+            const initialData: any = {};
+            if (localLogo) initialData.logoUrl = localLogo;
+            if (localPhoto) initialData.photoUrl = localPhoto;
+            if (localAboutPhoto) initialData.aboutPhotoUrl = localAboutPhoto;
+            await setDoc(docRef, initialData, { merge: true });
+          }
+        }
+      } catch (err) {
+        console.error('Error loading assets from Firestore:', err);
+      }
+    };
+    loadAssetsFromFirestore();
+  }, []);
 
   useEffect(() => {
     if (demoToast.visible) {
