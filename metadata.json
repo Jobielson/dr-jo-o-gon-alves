@@ -1,0 +1,6 @@
+{
+  "name": "Advogado Dr. Joao Goncalves",
+  "description": "Landing Page de Alta Conversão para o Dr. João Gonçalves, Advogado em Natal - RN",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
