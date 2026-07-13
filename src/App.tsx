@@ -39,6 +39,16 @@ export default function App() {
   const [customPhoto, setCustomPhoto] = useState<string | null>(() => localStorage.getItem('custom_photo'));
   const [customAboutPhoto, setCustomAboutPhoto] = useState<string | null>(() => localStorage.getItem('custom_about_photo'));
 
+  const [logoUrl, setLogoUrl] = useState<string | null>(() => {
+    return localStorage.getItem('custom_logo') || '/custom_logo.png';
+  });
+  const [photoUrl, setPhotoUrl] = useState<string>(() => {
+    return localStorage.getItem('custom_photo') || '/custom_photo.png';
+  });
+  const [aboutPhotoUrl, setAboutPhotoUrl] = useState<string>(() => {
+    return localStorage.getItem('custom_about_photo') || '/custom_about_photo.png';
+  });
+
   const [demoToast, setDemoToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
 
   const showDemoToast = (message: string) => {
@@ -59,6 +69,32 @@ export default function App() {
     showDemoToast(`[Modo de Compartilhamento] O botão "${buttonName}" simula o direcionamento correto de forma segura e sem tirar você do site!`);
   };
 
+  const syncImageToServer = async (type: string, base64: string | null) => {
+    if (!base64 || !base64.startsWith('data:image')) return;
+    try {
+      await fetch('/api/save-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type, base64 }),
+      });
+    } catch (err) {
+      console.error(`Error saving ${type} to server:`, err);
+    }
+  };
+
+  useEffect(() => {
+    // Automatically save localStorage custom images to the backend (dev server)
+    const logo = localStorage.getItem('custom_logo');
+    const photo = localStorage.getItem('custom_photo');
+    const aboutPhoto = localStorage.getItem('custom_about_photo');
+
+    if (logo) syncImageToServer('logo', logo);
+    if (photo) syncImageToServer('photo', photo);
+    if (aboutPhoto) syncImageToServer('about_photo', aboutPhoto);
+  }, []);
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -66,7 +102,9 @@ export default function App() {
       reader.onloadend = () => {
         const base64String = reader.result as string;
         setCustomLogo(base64String);
+        setLogoUrl(base64String);
         localStorage.setItem('custom_logo', base64String);
+        syncImageToServer('logo', base64String);
       };
       reader.readAsDataURL(file);
     }
@@ -79,7 +117,9 @@ export default function App() {
       reader.onloadend = () => {
         const base64String = reader.result as string;
         setCustomPhoto(base64String);
+        setPhotoUrl(base64String);
         localStorage.setItem('custom_photo', base64String);
+        syncImageToServer('photo', base64String);
       };
       reader.readAsDataURL(file);
     }
@@ -92,9 +132,29 @@ export default function App() {
       reader.onloadend = () => {
         const base64String = reader.result as string;
         setCustomAboutPhoto(base64String);
+        setAboutPhotoUrl(base64String);
         localStorage.setItem('custom_about_photo', base64String);
+        syncImageToServer('about_photo', base64String);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleLogoError = () => {
+    if (logoUrl === '/custom_logo.png') {
+      setLogoUrl(null);
+    }
+  };
+
+  const handlePhotoError = () => {
+    if (photoUrl === '/custom_photo.png') {
+      setPhotoUrl("https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800");
+    }
+  };
+
+  const handleAboutPhotoError = () => {
+    if (aboutPhotoUrl === '/custom_about_photo.png') {
+      setAboutPhotoUrl("https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200");
     }
   };
 
@@ -242,9 +302,9 @@ export default function App() {
                   ease: "easeInOut",
                 }}
               >
-                {customLogo ? (
+                {logoUrl ? (
                   <div className="w-full h-full bg-[#fdfbf7] p-2.5 rounded-full border-2 border-[#4c2f1a]/25 shadow-lg flex items-center justify-center overflow-hidden">
-                    <img src={customLogo} alt="Logo" className="w-full h-full object-contain rounded-full" />
+                    <img src={logoUrl} alt="Logo" className="w-full h-full object-contain rounded-full" onError={handleLogoError} />
                   </div>
                 ) : (
                   <div className="w-full h-full">
@@ -263,9 +323,10 @@ export default function App() {
             <div className="bg-[#fefbec] p-3 rounded-sm border border-[#4c2f1a]/15 editorial-shadow relative group">
               <div className="relative overflow-hidden rounded-sm h-[400px]">
                 <img
-                  src={customPhoto || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800"}
+                  src={photoUrl}
                   alt="Dr. João Gonçalves - Advogado"
                   className="w-full h-full object-cover rounded-sm transition-all duration-700 transform hover:scale-105"
+                  onError={handlePhotoError}
                   referrerPolicy="no-referrer"
                 />
               </div>
@@ -388,9 +449,10 @@ export default function App() {
               <div className="bg-[#fdfbf7] p-3 border border-[#4c2f1a]/15 shadow-xl rounded-sm relative">
                 <div className="relative overflow-hidden rounded-sm h-[320px]">
                   <img
-                    src={customAboutPhoto || "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200"}
+                    src={aboutPhotoUrl}
                     alt="Escritório de Advocacia"
                     className="w-full h-full object-cover rounded-sm transition-all duration-700 transform hover:scale-105"
+                    onError={handleAboutPhotoError}
                     referrerPolicy="no-referrer"
                   />
                 </div>
