@@ -25,7 +25,6 @@ import ServiceCard from './components/ServiceCard';
 import LeadForm from './components/LeadForm';
 import FAQSection from './components/FAQSection';
 import LeadsManager from './components/LeadsManager';
-import JGLogo from './components/JGLogo';
 import { servicesData, testimonialsData } from './data';
 import { Lead } from './types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -35,19 +34,6 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [leadsTrigger, setLeadsTrigger] = useState(0);
   const [isFloatVisible, setIsFloatVisible] = useState(false);
-  const [customLogo, setCustomLogo] = useState<string | null>(() => localStorage.getItem('custom_logo'));
-  const [customPhoto, setCustomPhoto] = useState<string | null>(() => localStorage.getItem('custom_photo'));
-  const [customAboutPhoto, setCustomAboutPhoto] = useState<string | null>(() => localStorage.getItem('custom_about_photo'));
-
-  const [logoUrl, setLogoUrl] = useState<string | null>(() => {
-    return localStorage.getItem('custom_logo') || '/custom_logo.png';
-  });
-  const [photoUrl, setPhotoUrl] = useState<string>(() => {
-    return localStorage.getItem('custom_photo') || '/custom_photo.png';
-  });
-  const [aboutPhotoUrl, setAboutPhotoUrl] = useState<string>(() => {
-    return localStorage.getItem('custom_about_photo') || '/custom_about_photo.png';
-  });
 
   const [demoToast, setDemoToast] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
 
@@ -67,95 +53,6 @@ export default function App() {
   const handleRedirectBlock = (e: React.MouseEvent, buttonName: string) => {
     e.preventDefault();
     showDemoToast(`[Modo de Compartilhamento] O botão "${buttonName}" simula o direcionamento correto de forma segura e sem tirar você do site!`);
-  };
-
-  const syncImageToServer = async (type: string, base64: string | null) => {
-    if (!base64 || !base64.startsWith('data:image')) return;
-    try {
-      await fetch('/api/save-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type, base64 }),
-      });
-    } catch (err) {
-      console.error(`Error saving ${type} to server:`, err);
-    }
-  };
-
-  useEffect(() => {
-    // Automatically save localStorage custom images to the backend (dev server)
-    const logo = localStorage.getItem('custom_logo');
-    const photo = localStorage.getItem('custom_photo');
-    const aboutPhoto = localStorage.getItem('custom_about_photo');
-
-    if (logo) syncImageToServer('logo', logo);
-    if (photo) syncImageToServer('photo', photo);
-    if (aboutPhoto) syncImageToServer('about_photo', aboutPhoto);
-  }, []);
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setCustomLogo(base64String);
-        setLogoUrl(base64String);
-        localStorage.setItem('custom_logo', base64String);
-        syncImageToServer('logo', base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setCustomPhoto(base64String);
-        setPhotoUrl(base64String);
-        localStorage.setItem('custom_photo', base64String);
-        syncImageToServer('photo', base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAboutPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setCustomAboutPhoto(base64String);
-        setAboutPhotoUrl(base64String);
-        localStorage.setItem('custom_about_photo', base64String);
-        syncImageToServer('about_photo', base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleLogoError = () => {
-    if (logoUrl === '/custom_logo.png') {
-      setLogoUrl(null);
-    }
-  };
-
-  const handlePhotoError = () => {
-    if (photoUrl === '/custom_photo.png') {
-      setPhotoUrl("https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800");
-    }
-  };
-
-  const handleAboutPhotoError = () => {
-    if (aboutPhotoUrl === '/custom_about_photo.png') {
-      setAboutPhotoUrl("https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200");
-    }
   };
 
   useEffect(() => {
@@ -224,7 +121,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#fdfbf7] text-[#2c1b10] font-sans antialiased overflow-x-hidden">
       {/* Header */}
-      <Header onContactClick={() => scrollToSection('diagnostico-form')} customLogo={customLogo} />
+      <Header onContactClick={() => scrollToSection('diagnostico-form')} />
 
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 md:py-24 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -302,18 +199,10 @@ export default function App() {
                   ease: "easeInOut",
                 }}
               >
-                {logoUrl ? (
-                  <div className="w-full h-full bg-[#fdfbf7] p-2.5 rounded-full border-2 border-[#4c2f1a]/25 shadow-lg flex items-center justify-center overflow-hidden">
-                    <img src={logoUrl} alt="Logo" className="w-full h-full object-contain rounded-full" onError={handleLogoError} />
-                  </div>
-                ) : (
-                  <div className="w-full h-full">
-                    <JGLogo className="w-full h-full" />
-                  </div>
-                )}
+                <div className="w-full h-full bg-[#fdfbf7] p-2.5 rounded-full border-2 border-[#4c2f1a]/25 shadow-lg flex items-center justify-center overflow-hidden">
+                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain rounded-full" />
+                </div>
               </motion.div>
-
-
             </div>
 
             {/* Background offset border */}
@@ -323,48 +212,18 @@ export default function App() {
             <div className="bg-[#fefbec] p-3 rounded-sm border border-[#4c2f1a]/15 editorial-shadow relative group">
               <div className="relative overflow-hidden rounded-sm h-[400px]">
                 <img
-                  src={photoUrl}
+                  src="/photo.png"
                   alt="Dr. João Gonçalves - Advogado"
                   className="w-full h-full object-cover rounded-sm transition-all duration-700 transform hover:scale-105"
-                  onError={handlePhotoError}
                   referrerPolicy="no-referrer"
                 />
               </div>
-
-
 
               <div className="mt-4 p-3 text-center bg-[#4c2f1a]/5 rounded-sm">
                 <p className="font-serif font-semibold text-[#2c1b10] text-sm">Dr. João Gonçalves</p>
                 <p className="font-mono text-[9px] uppercase tracking-widest text-[#4c2f1a]/80 mt-0.5">OAB/CE e atuação em Hidrolândia - CE</p>
               </div>
             </div>
-
-            {/* Hidden Input File for Logo upload */}
-            <input
-              type="file"
-              id="logo-upload-input"
-              accept="image/*"
-              onChange={handleLogoUpload}
-              className="hidden"
-            />
-
-            {/* Hidden Input File for Photo upload */}
-            <input
-              type="file"
-              id="photo-upload-input"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-
-            {/* Hidden Input File for About Photo upload */}
-            <input
-              type="file"
-              id="about-photo-upload-input"
-              accept="image/*"
-              onChange={handleAboutPhotoUpload}
-              className="hidden"
-            />
 
             {/* Float Metric Badge */}
             <div className="absolute -bottom-6 -left-6 bg-[#fdfbf7] border border-[#4c2f1a]/15 py-3 px-4 rounded-sm shadow-lg flex items-center gap-3">
@@ -449,10 +308,9 @@ export default function App() {
               <div className="bg-[#fdfbf7] p-3 border border-[#4c2f1a]/15 shadow-xl rounded-sm relative">
                 <div className="relative overflow-hidden rounded-sm h-[320px]">
                   <img
-                    src={aboutPhotoUrl}
+                    src="/about_photo.png"
                     alt="Escritório de Advocacia"
                     className="w-full h-full object-cover rounded-sm transition-all duration-700 transform hover:scale-105"
-                    onError={handleAboutPhotoError}
                     referrerPolicy="no-referrer"
                   />
                 </div>

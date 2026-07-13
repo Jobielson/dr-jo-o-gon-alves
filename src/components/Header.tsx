@@ -1,27 +1,21 @@
 import React from 'react';
 import { Phone } from 'lucide-react';
-import JGLogo from './JGLogo';
 
 interface HeaderProps {
   onContactClick: () => void;
-  customLogo?: string | null;
 }
 
-export default function Header({ onContactClick, customLogo }: HeaderProps) {
+export default function Header({ onContactClick }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-[#fdfbf7]/90 backdrop-blur-md border-b border-[#4c2f1a]/10 py-4 px-6 md:px-12 transition-all duration-300">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10">
-            {customLogo ? (
-              <img 
-                src={customLogo} 
-                alt="Logo Customizada" 
-                className="w-10 h-10 object-contain rounded-full border border-[#4c2f1a]/15 shadow-sm"
-              />
-            ) : (
-              <JGLogo size="100%" className="w-full h-full" />
-            )}
+            <img 
+              src="/logo.png" 
+              alt="Logo" 
+              className="w-10 h-10 object-contain rounded-full border border-[#4c2f1a]/15 shadow-sm"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-serif font-semibold text-lg tracking-wide text-[#2c1b10]">
